@@ -62,7 +62,7 @@ The project runs in three stages:
 | Banks | MEBL, UBL, HBL, MCB, BAHL | Direct — via net interest margins |
 | Textile | NML, GATM, ILP, KTML | Idiosyncratic — export/FX-driven |
 | Cement | LUCK, DGKC, MLCF, FCCL, CHCC | Mixed — construction financing + local demand |
-| Fertilizer | FFC, ENGRO, FATIMA, EFERT | Defensive — subsidy/input-cost driven |
+| Fertilizer | FFC, FATIMA, EFERT | Defensive — subsidy/input-cost driven |
 | Oil & Gas Exploration | OGDC, PPL, POL, MARI | Idiosyncratic — global oil prices |
 | Autos | INDU, PSMC, HCAR, MTL | Mixed, lagged — auto financing + FX |
 
