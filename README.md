@@ -2,60 +2,40 @@
 
 **Which Pakistan Stock Exchange sectors deliver reliable risk-adjusted returns — and how do they react to SBP policy rate decisions?**
 
-Capstone project — AuratTech Data Analyst Track
-Team: Samia  Zainab
+Capstone Project — AuratTech Data Analyst Track
+**Team:** Samia Sharif & Zainab Fatima
 
----
 
-## Table of Contents
 
-- [Overview](#overview)
-- [Business Problem](#business-problem)
-- [Dataset](#dataset)
-- [Repository Structure](#repository-structure)
-- [Methodology](#methodology)
-  - [MP1 — Return & Risk by Sector](#mp1--return--risk-by-sector)
-  - [MP2 — Reaction to SBP Policy Events](#mp2--reaction-to-sbp-policy-events)
-  - [Capstone — Sector Reliability Score](#capstone--sector-reliability-score)
-- [Key Findings](#key-findings)
-- [SQL Techniques Used](#sql-techniques-used)
-- [Recommendations](#recommendations)
-- [Limitations & Next Steps](#limitations--next-steps)
-- [Tech Stack](#tech-stack)
-- [Deliverables](#deliverables)
 
----
+## Project Overview
 
-## Overview
+This project analyzes sector-level performance on the Pakistan Stock Exchange (PSX) to identify sectors that demonstrate relatively reliable risk-adjusted returns and to examine how market performance responds to changes in the State Bank of Pakistan (SBP) policy rate.
 
-Pakistani equity investors have no simple, data-driven way to compare PSX sectors on two things that actually matter for portfolio decisions: **how good is the risk-adjusted return**, and **how predictably does the sector react to State Bank of Pakistan (SBP) policy rate decisions**. This project builds that comparison from raw price data using SQL — window functions, CTEs, joins, and conditional aggregation — and ends with a single **Reliability Score** that ranks six PSX sectors on both dimensions at once.
+Using SQL-based data preparation, analysis, and exploratory data analysis, the project combines PSX market data with SBP policy-rate information to evaluate return patterns, risk, and potential relationships between monetary policy decisions and sector performance.
 
-The project runs in three stages:
+The analysis is structured across two project milestones, beginning with the collection, cleaning, and exploration of PSX data and progressing to the integration of policy-rate data for a broader market analysis.
 
-| Stage | Question | Output |
-|---|---|---|
-| **MP1** | How does each sector perform on average, across the full period? | Return-to-risk ranking |
-| **MP2** | Does that behavior change around SBP policy events? | Predictability (swing consistency) ranking |
-| **Capstone** | Which sectors are good *and* predictable? | Combined Reliability Score |
+## Problem Statement
 
-## Business Problem
+Investors in the Pakistan Stock Exchange face the challenge of identifying sectors that can provide attractive returns without taking on excessive levels of risk.
 
-- PSX investors lack a clear, data-driven view of which sectors deliver reliable risk-adjusted returns.
-- SBP policy rate changes are known to move markets, but their sector-by-sector impact is not well understood.
-- Portfolio decisions are often guided by sector reputation rather than measured return, risk, and predictability.
-- This analysis identifies which of six PSX sectors are genuinely reliable — versus which only look good on a temporary macro tailwind.
+Simply comparing returns may not provide a complete picture of sector performance, particularly during periods of changing monetary policy. SBP policy-rate decisions can influence borrowing costs, business activity, investor sentiment, and market performance across different sectors.
 
-## Dataset
+This project addresses the following questions:
 
-| Feature | Details |
-|---|---|
-| **Source** | PSX historical prices ([dps.psx.com.pk](https://dps.psx.com.pk/historical)) + SBP MPC policy announcements |
-| **Coverage** | January 2023 – present |
-| **Scope** | 23 tickers across 6 sectors |
-| **Unit of analysis** | Daily closing price, per ticker |
-| **Core tables** | `sector_prices`, `policy_events` |
+1.	Which sectors have the highest average return over the period, and which have the highest volatility (standard deviation of returns)?
+2.	Which sectors have the best return-to-risk ratio (return per unit of volatility)?
+3.	How do sector returns behave in the days/weeks immediately after an SBP policy rate change?
+4.	Which sectors show a consistent pattern of reacting to rate changes (predictable) versus sectors that move independently of macro events (idiosyncratic risk)?
+5.	Based on this, which sectors would qualify as “stable/reliable” versus “high-return but unpredictable”?
 
-### Sectors & tickers
+
+## Data Sources
+- psxdata Python library (pip install psxdata) for PSX prices(bulk pull)
+- SBP Reverse Repo/Repo/Policy Rate History (sbp.org.pk/ecodata/OVR-Repo-History.pdf) for SBP Policy Rate History
+  
+## Sectors & tickers
 
 | Sector | Tickers | Rate sensitivity |
 |---|---|---|
@@ -66,85 +46,116 @@ The project runs in three stages:
 | Oil & Gas Exploration | OGDC, PPL, POL, MARI | Idiosyncratic — global oil prices |
 | Autos | INDU, PSMC, HCAR, MTL | Mixed, lagged — auto financing + FX |
 
-### `policy_events` schema
+## Tools Used
+- PostgreSQL — Database creation, data storage, cleaning, transformation, joins, and analysis
+- SQL — Data querying, aggregation, filtering, calculations, and exploratory analysis
+- pgAdmin 4 — PostgreSQL database management and query execution
+- Excel/CSV — Data preparation and source-data handling
+- GitHub — Project documentation and portfolio presentation
 
-| Column | Type | Notes |
-|---|---|---|
-| `date` | DATE | Date of the MPC decision |
-| `old_rate` / `new_rate` | NUMERIC | Policy rate before/after (%) |
-| `direction` | TEXT | `hike` / `cut` / `hold` |
-| `change_bps` | INTEGER | Size of the move, in basis points |
 
-## Repository Structure
+## Datbase Schema
+-- Table: sector_prices
+-- One row per ticker per trading day
+-- ============================================
+CREATE TABLE sector_prices (
+    id          SERIAL PRIMARY KEY,
+    date        DATE NOT NULL,
+    ticker      VARCHAR(10) NOT NULL,
+    sector      VARCHAR(50) NOT NULL,
+    open        NUMERIC(10,2),
+    high        NUMERIC(10,2),
+    low         NUMERIC(10,2),
+    close       NUMERIC(10,2),
+    volume      BIGINT,
+    is_anomaly  BOOLEAN DEFAULT FALSE,
 
-```
-.
-├── data/
-│   ├── sector_prices_banks.csv
-│   ├── sector_prices_textile.csv
-│   ├── sector_prices_cement.csv
-│   ├── sector_prices_fertilizer.csv
-│   ├── sector_prices_oilgas.csv
-│   ├── sector_prices_autos.csv
-│   └── sbp_policy_events.csv
-├── sql/
-│   ├── mp1_return_risk.sql        # daily_returns view + return/risk queries
-│   ├── mp2_policy_sensitivity.sql # before/after labeling, swing consistency
-│   └── capstone_reliability.sql   # combined MP1 + MP2 reliability score
-├── reports/
-│   ├── MP2_Sector_Sensitivity_Results.docx
-│   └── Capstone_Report_MP1_MP2.docx
-├── presentation/
-│   └── PSX_Sector_Reliability_Presentation.pptx
-└── README.md
-```
+    CONSTRAINT uq_ticker_date UNIQUE (ticker, date)
+);
 
-## Methodology
+CREATE INDEX idx_sector_prices_date   ON sector_prices (date);
+CREATE INDEX idx_sector_prices_ticker ON sector_prices (ticker);
+CREATE INDEX idx_sector_prices_sector ON sector_prices (sector);
 
-### MP1 — Return & Risk by Sector
 
-Daily returns are computed per ticker with `LAG()` over closing price, then aggregated to sector level.
+-- Table: policy_events
+-- ============================================
 
-```sql
-CREATE VIEW daily_returns AS
-SELECT
-    date, ticker, sector, close,
-    LAG(close) OVER (PARTITION BY ticker ORDER BY date) AS prev_close,
-    (close - LAG(close) OVER (PARTITION BY ticker ORDER BY date))
-      / LAG(close) OVER (PARTITION BY ticker ORDER BY date) AS daily_return
-FROM sector_prices
-WHERE is_anomaly = FALSE;
-```
+CREATE TABLE IF NOT EXISTS public.policy_events (
+    event_date       DATE,
+    old_rate         NUMERIC(10, 4),
+    new_rate         NUMERIC(10, 4),
+    direction        VARCHAR(20),
+    change_bps       INTEGER,
+    notes            TEXT,
+    verified         BOOLEAN
+);
 
-From there: average daily return, standard deviation (risk), annualized return/volatility, and **return per unit of risk** (`avg_return / stddev`), ranked with `RANK()`.
 
-### MP2 — Reaction to SBP Policy Events
 
-Sector returns are joined to `policy_events` on a **±10-day window**, each trading day is labeled `before`/`after` the nearest event with `CASE WHEN`, and results are aggregated with a `WITH` CTE.
+## Project Phases
+ ### MP1 — PSX Market Data Analysis
+ #### Data Collection
 
-```sql
-CASE
-    WHEN r.trade_date < e.date  THEN 'before'
-    WHEN r.trade_date >= e.date THEN 'after'
-END AS period
-```
+Collected and organized historical Pakistan Stock Exchange market data required for sector-level analysis.
 
-**Swing consistency** — the core predictability metric — is the standard deviation of each sector's (after − before) return across many individual events, computed with `FILTER (WHERE …)`:
+The data was structured to support analysis of stock prices, returns, sector performance, and associated risk measures.
 
-```sql
-AVG(daily_return) FILTER (WHERE period = 'after')  AS after_avg,
-AVG(daily_return) FILTER (WHERE period = 'before') AS before_avg
-```
+#### Schema Design
 
-Lower swing consistency = a more repeatable, predictable reaction.
+Designed a relational database structure to organize the PSX market data efficiently.
 
-### Capstone — Sector Reliability Score
+The schema was developed with a focus on:
 
-```
-Reliability Score = MP1 return_per_unit_risk ÷ (1 + MP2 swing_consistency)
-```
+- Data consistency
+- Appropriate relationships between entities
+- Efficient querying
+- Analytical usability
+- Scalability for additional datasets
+#### Data Inspection and Cleaning
 
-This keeps risk-adjusted return as the primary driver while discounting sectors whose reaction to policy events is less consistent.
+Inspected the collected data to identify quality issues before analysis.
+
+Key data-preparation activities included:
+
+- Identifying missing and inconsistent values
+- Checking data types
+- Reviewing duplicate records
+- Standardizing relevant fields
+- Validating dates and numerical values
+- Preparing the dataset for analytical queries
+#### Exploratory Data Analysis (EDA)
+
+Performed SQL-based exploratory analysis to understand sector-level market behavior.
+
+The analysis focused on:
+
+- Return patterns
+- Sector performance
+- Volatility and risk
+- Historical trends
+- Comparative sector performance
+- Identification of notable patterns and anomalies
+
+
+### MP2 — Integration of SBP Policy-Rate Data
+#### Joined the BPS Data
+
+Integrated the SBP policy-rate dataset with the PSX market data to investigate the relationship between monetary policy decisions and stock-market performance.
+
+The datasets were joined using appropriate time-based fields to enable analysis of market behavior around policy-rate changes.
+
+#### Exploratory Data Analysis
+
+Extended the EDA to examine sector performance in the context of SBP policy-rate movements.
+
+The analysis focused on:
+
+- Sector returns around policy-rate changes
+- Differences in sector responses
+- Risk and volatility during changing rate environments
+- Potential patterns between monetary policy and market performance
+- Identification of sectors showing relatively stronger or weaker responses
 
 ## Key Findings
 
@@ -198,20 +209,11 @@ This keeps risk-adjusted return as the primary driver while discounting sectors 
 - Backtest a reliability-score-weighted portfolio against an equal-weight PSX benchmark.
 - Test shorter or asymmetric event windows to validate the ±10-day choice.
 
-## Tech Stack
 
-- **PostgreSQL** — data modeling and analysis (views, CTEs, window functions)
-- **PSX historical data** ([dps.psx.com.pk](https://dps.psx.com.pk/historical)) — price source
-- **SBP MPC announcements** — policy event source
-- **Excel / CSV** — raw data collection and staging
-- **PowerPoint** — final stakeholder presentation
 
-## Deliverables
+Author
 
-- [`reports/MP2_Sector_Sensitivity_Results.docx`](reports/MP2_Sector_Sensitivity_Results.docx) — full MP2 query results and insights
-- [`reports/Capstone_Report_MP1_MP2.docx`](reports/Capstone_Report_MP1_MP2.docx) — combined MP1 + MP2 write-up with the Reliability Score
-- [`presentation/PSX_Sector_Reliability_Presentation.pptx`](presentation/PSX_Sector_Reliability_Presentation.pptx) — 12-slide stakeholder presentation
+Samia Sharif
+Data Analyst | SQL • Python • Power BI
 
----
-
-*AuratTech Data Analyst Track — Capstone Project*
+Capstone Project — AuratTech Data Analyst Track
