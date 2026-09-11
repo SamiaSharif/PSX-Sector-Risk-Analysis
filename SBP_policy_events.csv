@@ -1,0 +1,14 @@
+date,old_rate,new_rate,direction,change_bps,notes,verified
+2023-06-26,21.00,22.00,hike,100,"Emergency MPC meeting ahead of IMF Stand-By Arrangement; effective 2023-06-27",confirmed
+2024-06-10,22.00,20.50,cut,-150,"First cut in four years",confirmed
+2024-07-29,20.50,19.50,cut,-100,"Second consecutive cut; effective 2024-07-30",confirmed
+2024-09-12,19.50,17.50,cut,-200,"Effective 2024-09-13; first single-digit-adjacent inflation reading in nearly 3 years",confirmed
+2024-11-04,17.50,15.00,cut,-250,"SBP's most aggressive single cut of the cycle",confirmed
+2024-12-16,15.00,13.00,cut,-200,"Fifth successive cut since June 2024; effective 2024-12-17",confirmed
+2025-01-28,13.00,12.00,cut,-100,"Cumulative 1000bps cut since June 2024 reached here",confirmed
+2025-05-05,12.00,11.00,cut,-100,"Effective 2025-05-06; last cut before an extended hold period",confirmed
+2025-06-16,11.00,11.00,hold,0,"First hold after May 2025 cut",confirmed
+2025-07-30,11.00,11.00,hold,0,"Second consecutive hold",confirmed
+2025-09-XX,11.00,11.00,hold,0,"Referenced in Dec-2025 coverage as one of 'four consecutive holds' before the Dec cut -- exact Sept 2025 meeting date not yet confirmed, needs pull from SBP MPC calendar",needs_date_confirmation
+2025-10-27,11.00,11.00,hold,0,"Rate held citing lower-than-expected flood impact",confirmed
+2025-12-15,11.00,10.50,cut,-50,"Surprise cut, market expected a hold; effective 2025-12-16",confirmed
