@@ -1,0 +1,360 @@
+-- ============================================================
+-- MP1: Sector Return & Risk Analysis
+-- AuratTech Data & AI Fellowship — PSX Capstone
+--
+-- Prerequisite tables: sector_prices, policy_events
+-- (see schema_create.sql / MP0 setup)
+-- ============================================================
+
+-- ============================================
+-- Q1: Daily returns per ticker
+-- (uses LAG to get previous day's close within each ticker)
+-- ============================================
+CREATE VIEW daily_returns AS
+SELECT
+    date,
+    ticker,
+    sector,
+    close,
+    LAG(close) OVER (PARTITION BY ticker ORDER BY date) AS prev_close,
+    (close - LAG(close) OVER (PARTITION BY ticker ORDER BY date))
+        / LAG(close) OVER (PARTITION BY ticker ORDER BY date) AS daily_return
+FROM sector_prices
+WHERE is_anomaly = FALSE;
+
+
+-- ============================================
+-- Q2: Average daily return per ticker
+-- ============================================
+SELECT
+    ticker,
+    sector,
+    ROUND(AVG(daily_return)::numeric, 6) AS avg_daily_return,
+    COUNT(*) AS trading_days
+FROM daily_returns
+WHERE daily_return IS NOT NULL
+GROUP BY ticker, sector
+ORDER BY sector, avg_daily_return DESC;
+
+
+-- ============================================
+-- Q3: Standard deviation (risk) per ticker
+-- ============================================
+SELECT
+    ticker,
+    sector,
+    ROUND(STDDEV(daily_return)::numeric, 6) AS return_stddev
+FROM daily_returns
+WHERE daily_return IS NOT NULL
+GROUP BY ticker, sector
+ORDER BY sector, return_stddev;
+
+
+-- ============================================
+-- Q4: Average daily return per sector
+-- (average across all tickers/days within the sector)
+-- ============================================
+SELECT
+    sector,
+    ROUND(AVG(daily_return)::numeric, 6) AS avg_daily_return,
+    COUNT(*) AS observations
+FROM daily_returns
+WHERE daily_return IS NOT NULL
+GROUP BY sector
+ORDER BY avg_daily_return DESC;
+
+
+-- ============================================
+-- Q5: Standard deviation (risk) per sector
+-- ============================================
+SELECT
+    sector,
+    ROUND(STDDEV(daily_return)::numeric, 6) AS return_stddev
+FROM daily_returns
+WHERE daily_return IS NOT NULL
+GROUP BY sector
+ORDER BY return_stddev;
+
+
+-- ============================================
+-- Q6: Annualized return and volatility per sector
+-- (252 trading days/year — standard convention)
+-- ============================================
+SELECT
+    sector,
+    ROUND((AVG(daily_return) * 252)::numeric, 4) AS annualized_return,
+    ROUND((STDDEV(daily_return) * SQRT(252))::numeric, 4) AS annualized_volatility
+FROM daily_returns
+WHERE daily_return IS NOT NULL
+GROUP BY sector
+ORDER BY annualized_return DESC;
+
+
+-- ============================================
+-- Q7: Rank sectors by return (highest first)
+-- ============================================
+SELECT
+    sector,
+    ROUND(AVG(daily_return)::numeric, 6) AS avg_daily_return,
+    RANK() OVER (ORDER BY AVG(daily_return) DESC) AS return_rank
+FROM daily_returns
+WHERE daily_return IS NOT NULL
+GROUP BY sector;
+
+
+-- ============================================
+-- Q8: Rank sectors by risk (lowest stddev = rank 1 = safest)
+-- ============================================
+SELECT
+    sector,
+    ROUND(STDDEV(daily_return)::numeric, 6) AS return_stddev,
+    RANK() OVER (ORDER BY STDDEV(daily_return) ASC) AS risk_rank
+FROM daily_returns
+WHERE daily_return IS NOT NULL
+GROUP BY sector;
+
+
+-- ============================================
+-- Q9: Combined return + risk ranking in one table
+-- (join Q7 and Q8 logic together for a single summary)
+-- ============================================
+WITH sector_stats AS (
+    SELECT
+        sector,
+        ROUND(AVG(daily_return)::numeric, 6) AS avg_daily_return,
+        ROUND(STDDEV(daily_return)::numeric, 6) AS return_stddev
+    FROM daily_returns
+    WHERE daily_return IS NOT NULL
+    GROUP BY sector
+)
+SELECT
+    sector,
+    avg_daily_return,
+    return_stddev,
+    RANK() OVER (ORDER BY avg_daily_return DESC) AS return_rank,
+    RANK() OVER (ORDER BY return_stddev ASC) AS risk_rank
+FROM sector_stats
+ORDER BY return_rank;
+
+
+-- ============================================
+-- Q10: Risk-adjusted return per sector (Sharpe-style, rf=0)
+-- return per unit of risk — higher is better
+-- ============================================
+WITH sector_stats AS (
+    SELECT
+        sector,
+        AVG(daily_return) AS avg_daily_return,
+        STDDEV(daily_return) AS return_stddev
+    FROM daily_returns
+    WHERE daily_return IS NOT NULL
+    GROUP BY sector
+)
+SELECT
+    sector,
+    ROUND(avg_daily_return::numeric, 6) AS avg_daily_return,
+    ROUND(return_stddev::numeric, 6) AS return_stddev,
+    ROUND((avg_daily_return / NULLIF(return_stddev, 0))::numeric, 4) AS return_per_unit_risk,
+    RANK() OVER (ORDER BY (avg_daily_return / NULLIF(return_stddev, 0)) DESC) AS risk_adjusted_rank
+FROM sector_stats
+ORDER BY risk_adjusted_rank;
+
+-- ============================================================
+-- MP2: Policy Rate & Sector Response Analysis
+-- AuratTech Data & AI Fellowship — PSX Capstone
+--
+-- Prerequisite tables: sector_prices, policy_events
+-- ============================================================
+
+
+-- Q1: Join returns to the nearest policy event and label before/after
+This is the core JOIN + CASE WHEN pattern: for each trading day within a 10-day window of a policy event, tag it as 'before' or 'after' that event.
+SELECT
+    r.ticker,
+    r.sector,
+    r.date              AS price_date,
+    r.close,
+    pe.date             AS event_date,
+    pe.direction,
+    pe.change_bps,
+    (r.date - pe.date)  AS days_from_event,
+    CASE
+        WHEN r.date < pe.date THEN 'before'
+        WHEN r.date > pe.date THEN 'after'
+        ELSE 'event_day'
+    END AS event_relation
+FROM sector_prices r
+CROSS JOIN LATERAL (
+    SELECT date, direction, change_bps
+    FROM policy_events
+    WHERE date IS NOT NULL
+    ORDER BY ABS(date - r.date)
+    LIMIT 1
+) pe
+WHERE ABS(r.date - pe.date) <= 10
+ORDER BY r.ticker, r.date;
+
+-- ============================================
+-- Q2:  Wrap it as a CTE, then compare average return before vs after
+A CTE (WITH ... AS) keeps the labeling logic reusable and makes the aggregation query underneath much easier to read.
+WITH sector_returns AS (
+    SELECT
+        ticker,
+        sector,
+        date AS trade_date,
+        (close - LAG(close) OVER (PARTITION BY ticker ORDER BY date))
+            / NULLIF(LAG(close) OVER (PARTITION BY ticker ORDER BY date), 0) AS daily_return
+    FROM sector_prices
+),
+labeled_returns AS (
+    SELECT
+        r.sector,
+        r.daily_return,
+        e.direction,
+        CASE
+            WHEN r.trade_date < e.date  THEN 'before'
+            WHEN r.trade_date >= e.date THEN 'after'
+        END AS period
+    FROM sector_returns r
+    JOIN policy_events e
+        ON r.trade_date BETWEEN e.date - INTERVAL '10 days'
+                            AND e.date + INTERVAL '10 days'
+    WHERE e.date IS NOT NULL
+      AND r.daily_return IS NOT NULL
+)
+SELECT
+    sector,
+    period,
+    ROUND(AVG(daily_return)::numeric, 5)    AS avg_return,
+    ROUND(STDDEV(daily_return)::numeric, 5) AS volatility
+FROM labeled_returns
+GROUP BY sector, period
+ORDER BY sector, period;
+
+
+-- ============================================
+-- Q3: Isolate the reaction to cuts only (rate-cut sensitivity)
+Since most events in the dataset are cuts, this filters to isolate the easing-cycle effect specifically, using WHERE on the joined direction column.
+WITH sector_returns AS (
+    SELECT
+        ticker,
+        sector,
+        date AS trade_date,
+        (close - LAG(close) OVER (PARTITION BY ticker ORDER BY date))
+            / NULLIF(LAG(close) OVER (PARTITION BY ticker ORDER BY date), 0) AS daily_return
+    FROM sector_prices
+),
+labeled_returns AS (
+    SELECT
+        r.sector,
+        r.daily_return,
+        e.direction,
+        CASE WHEN r.trade_date < e.date THEN 'before' ELSE 'after' END AS period
+    FROM sector_returns r
+    JOIN policy_events e
+        ON r.trade_date BETWEEN e.date - INTERVAL '10 days'
+                            AND e.date + INTERVAL '10 days'
+    WHERE e.direction = 'cut'
+      AND e.date IS NOT NULL
+      AND r.daily_return IS NOT NULL
+)
+SELECT
+    sector,
+    period,
+    ROUND(AVG(daily_return)::numeric, 5) AS avg_return
+FROM labeled_returns
+GROUP BY sector, period
+ORDER BY sector, period;
+
+-- ============================================
+-- Q4: Measure consistency of reaction (predictable vs idiosyncratic)
+A sector is 'predictable' if its after-event return consistently moves the same direction across many events, not just once. This computes the swing (after minus before) per sector per individual event, then measures how consistent that swing is using STDDEV across events — low STDDEV of the swing means a reliable, repeatable reaction.
+
+WITH sector_returns AS (
+    SELECT
+        ticker,
+        sector,
+        date AS trade_date,
+        (close - LAG(close) OVER (PARTITION BY ticker ORDER BY date))
+            / NULLIF(LAG(close) OVER (PARTITION BY ticker ORDER BY date), 0) AS daily_return
+    FROM sector_prices
+),
+labeled_returns AS (
+    SELECT
+        r.sector, e.date AS event_date, r.daily_return,
+        CASE WHEN r.trade_date < e.date THEN 'before' ELSE 'after' END AS period
+    FROM sector_returns r
+    JOIN policy_events e
+        ON r.trade_date BETWEEN e.date - INTERVAL '10 days'
+                            AND e.date + INTERVAL '10 days'
+    WHERE e.date IS NOT NULL
+      AND r.daily_return IS NOT NULL
+),
+per_event AS (
+    SELECT
+        sector, event_date,
+        AVG(daily_return) FILTER (WHERE period = 'after')  AS after_avg,
+        AVG(daily_return) FILTER (WHERE period = 'before') AS before_avg
+    FROM labeled_returns
+    GROUP BY sector, event_date
+)
+SELECT
+    sector,
+    ROUND(AVG(after_avg - before_avg)::numeric, 5)    AS avg_swing,
+    ROUND(STDDEV(after_avg - before_avg)::numeric, 5) AS swing_consistency
+FROM per_event
+GROUP BY sector
+ORDER BY swing_consistency ASC;
+
+
+-- ============================================
+
+-- Q5: Classify sectors as stable/reliable vs high-return but unpredictable
+The final MP2 query applies simple thresholds via CASE WHEN to produce a plain-language label per sector, ready to feed into the Capstone's Reliability Score.
+
+WITH sector_returns AS (
+    SELECT
+        ticker,
+        sector,
+        date AS trade_date,
+        (close - LAG(close) OVER (PARTITION BY ticker ORDER BY date))
+            / NULLIF(LAG(close) OVER (PARTITION BY ticker ORDER BY date), 0) AS daily_return
+    FROM sector_prices
+),
+labeled_returns AS (
+    SELECT
+        r.sector, e.date AS event_date, r.daily_return,
+        CASE WHEN r.trade_date < e.date THEN 'before' ELSE 'after' END AS period
+    FROM sector_returns r
+    JOIN policy_events e
+        ON r.trade_date BETWEEN e.date - INTERVAL '10 days'
+                            AND e.date + INTERVAL '10 days'
+    WHERE e.date IS NOT NULL
+      AND r.daily_return IS NOT NULL
+),
+per_event AS (
+    SELECT
+        sector, event_date,
+        AVG(daily_return) FILTER (WHERE period = 'after')  AS after_avg,
+        AVG(daily_return) FILTER (WHERE period = 'before') AS before_avg
+    FROM labeled_returns
+    GROUP BY sector, event_date
+),
+sector_summary AS (
+    SELECT
+        sector,
+        ROUND(AVG(after_avg - before_avg)::numeric, 5)    AS avg_swing,
+        ROUND(STDDEV(after_avg - before_avg)::numeric, 5) AS swing_consistency
+    FROM per_event
+    GROUP BY sector
+)
+SELECT
+    sector,
+    avg_swing,
+    swing_consistency,
+    CASE
+        WHEN swing_consistency < 0.01  THEN 'Predictable macro-reactor'
+        WHEN swing_consistency >= 0.01 THEN 'Idiosyncratic / macro-independent'
+    END AS classification
+FROM sector_summary
+ORDER BY swing_consistency ASC;
