@@ -35,7 +35,7 @@ This project addresses the following questions:
 - psxdata Python library (pip install psxdata) for PSX prices(bulk pull)
 - SBP Reverse Repo/Repo/Policy Rate History (sbp.org.pk/ecodata/OVR-Repo-History.pdf) for SBP Policy Rate History
   
-### Sectors & tickers
+## Sectors & tickers
 
 | Sector | Tickers | Rate sensitivity |
 |---|---|---|
@@ -54,36 +54,73 @@ This project addresses the following questions:
 - GitHub — Project documentation and portfolio presentation
 
 
+## Datbase Schema
 
-From there: average daily return, standard deviation (risk), annualized return/volatility, and **return per unit of risk** (`avg_return / stddev`), ranked with `RANK()`.
 
-### MP2 — Reaction to SBP Policy Events
 
-Sector returns are joined to `policy_events` on a **±10-day window**, each trading day is labeled `before`/`after` the nearest event with `CASE WHEN`, and results are aggregated with a `WITH` CTE.
+## Project Phases
+ ### MP1 — PSX Market Data Analysis
+ #### Data Collection
 
-```sql
-CASE
-    WHEN r.trade_date < e.date  THEN 'before'
-    WHEN r.trade_date >= e.date THEN 'after'
-END AS period
-```
+Collected and organized historical Pakistan Stock Exchange market data required for sector-level analysis.
 
-**Swing consistency** — the core predictability metric — is the standard deviation of each sector's (after − before) return across many individual events, computed with `FILTER (WHERE …)`:
+The data was structured to support analysis of stock prices, returns, sector performance, and associated risk measures.
 
-```sql
-AVG(daily_return) FILTER (WHERE period = 'after')  AS after_avg,
-AVG(daily_return) FILTER (WHERE period = 'before') AS before_avg
-```
+#### Schema Design
 
-Lower swing consistency = a more repeatable, predictable reaction.
+Designed a relational database structure to organize the PSX market data efficiently.
 
-### Capstone — Sector Reliability Score
+The schema was developed with a focus on:
 
-```
-Reliability Score = MP1 return_per_unit_risk ÷ (1 + MP2 swing_consistency)
-```
+- Data consistency
+- Appropriate relationships between entities
+- Efficient querying
+- Analytical usability
+- Scalability for additional datasets
+#### Data Inspection and Cleaning
 
-This keeps risk-adjusted return as the primary driver while discounting sectors whose reaction to policy events is less consistent.
+Inspected the collected data to identify quality issues before analysis.
+
+Key data-preparation activities included:
+
+- Identifying missing and inconsistent values
+- Checking data types
+- Reviewing duplicate records
+- Standardizing relevant fields
+- Validating dates and numerical values
+- Preparing the dataset for analytical queries
+#### Exploratory Data Analysis (EDA)
+
+Performed SQL-based exploratory analysis to understand sector-level market behavior.
+
+The analysis focused on:
+
+- Return patterns
+- Sector performance
+- Volatility and risk
+- Historical trends
+- Comparative sector performance
+- Identification of notable patterns and anomalies
+
+
+### MP2 — Integration of SBP Policy-Rate Data
+#### Joined the BPS Data
+
+Integrated the SBP policy-rate dataset with the PSX market data to investigate the relationship between monetary policy decisions and stock-market performance.
+
+The datasets were joined using appropriate time-based fields to enable analysis of market behavior around policy-rate changes.
+
+#### Exploratory Data Analysis
+
+Extended the EDA to examine sector performance in the context of SBP policy-rate movements.
+
+The analysis focused on:
+
+- Sector returns around policy-rate changes
+- Differences in sector responses
+- Risk and volatility during changing rate environments
+- Potential patterns between monetary policy and market performance
+- Identification of sectors showing relatively stronger or weaker responses
 
 ## Key Findings
 
@@ -137,20 +174,6 @@ This keeps risk-adjusted return as the primary driver while discounting sectors 
 - Backtest a reliability-score-weighted portfolio against an equal-weight PSX benchmark.
 - Test shorter or asymmetric event windows to validate the ±10-day choice.
 
-## Tech Stack
 
-- **PostgreSQL** — data modeling and analysis (views, CTEs, window functions)
-- **PSX historical data** ([dps.psx.com.pk](https://dps.psx.com.pk/historical)) — price source
-- **SBP MPC announcements** — policy event source
-- **Excel / CSV** — raw data collection and staging
-- **PowerPoint** — final stakeholder presentation
 
-## Deliverables
 
-- [`reports/MP2_Sector_Sensitivity_Results.docx`](reports/MP2_Sector_Sensitivity_Results.docx) — full MP2 query results and insights
-- [`reports/Capstone_Report_MP1_MP2.docx`](reports/Capstone_Report_MP1_MP2.docx) — combined MP1 + MP2 write-up with the Reliability Score
-- [`presentation/PSX_Sector_Reliability_Presentation.pptx`](presentation/PSX_Sector_Reliability_Presentation.pptx) — 12-slide stakeholder presentation
-
----
-
-*AuratTech Data Analyst Track — Capstone Project*
