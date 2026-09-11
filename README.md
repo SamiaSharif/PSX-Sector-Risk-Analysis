@@ -211,4 +211,9 @@ The analysis focused on:
 
 
 
+Author
 
+Samia Sharif
+Data Analyst | SQL • Python • Power BI
+
+Capstone Project — AuratTech Data Analyst Track
