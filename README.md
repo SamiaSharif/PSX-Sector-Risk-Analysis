@@ -55,6 +55,41 @@ This project addresses the following questions:
 
 
 ## Datbase Schema
+-- Table: sector_prices
+-- One row per ticker per trading day
+-- ============================================
+CREATE TABLE sector_prices (
+    id          SERIAL PRIMARY KEY,
+    date        DATE NOT NULL,
+    ticker      VARCHAR(10) NOT NULL,
+    sector      VARCHAR(50) NOT NULL,
+    open        NUMERIC(10,2),
+    high        NUMERIC(10,2),
+    low         NUMERIC(10,2),
+    close       NUMERIC(10,2),
+    volume      BIGINT,
+    is_anomaly  BOOLEAN DEFAULT FALSE,
+
+    CONSTRAINT uq_ticker_date UNIQUE (ticker, date)
+);
+
+CREATE INDEX idx_sector_prices_date   ON sector_prices (date);
+CREATE INDEX idx_sector_prices_ticker ON sector_prices (ticker);
+CREATE INDEX idx_sector_prices_sector ON sector_prices (sector);
+
+
+-- Table: policy_events
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS public.policy_events (
+    event_date       DATE,
+    old_rate         NUMERIC(10, 4),
+    new_rate         NUMERIC(10, 4),
+    direction        VARCHAR(20),
+    change_bps       INTEGER,
+    notes            TEXT,
+    verified         BOOLEAN
+);
 
 
 
