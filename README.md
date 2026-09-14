@@ -56,8 +56,8 @@ This project addresses the following questions:
 
 
 ## Datbase Schema
--- Table: sector_prices
--- One row per ticker per trading day
+** Table: sector_prices**
+
 
 
 CREATE TABLE sector_prices (
@@ -89,24 +89,31 @@ CREATE INDEX idx_sector_prices_ticker ON sector_prices (ticker);
 CREATE INDEX idx_sector_prices_sector ON sector_prices (sector);
 
 
--- Table: policy_events
+** Table: policy_events**
 
 
 
 CREATE TABLE IF NOT EXISTS public.policy_events (
+
     event_date       DATE,
+    
     old_rate         NUMERIC(10, 4),
+    
     new_rate         NUMERIC(10, 4),
+    
     direction        VARCHAR(20),
+    
     change_bps       INTEGER,
+    
     notes            TEXT,
+    
     verified         BOOLEAN
 );
 
 
 
 ## Project Phases
- ### MP1 — PSX Market Data Analysis
+ ### MP1: PSX Market Data Analysis
  #### Data Collection
 
 Collected and organized historical Pakistan Stock Exchange market data required for sector-level analysis.
@@ -150,7 +157,7 @@ The analysis focused on:
 - Identification of notable patterns and anomalies
 
 
-### MP2 — Integration of SBP Policy-Rate Data
+### MP2: Integration of SBP Policy-Rate Data
 #### Joined the BPS Data
 
 Integrated the SBP policy-rate dataset with the PSX market data to investigate the relationship between monetary policy decisions and stock-market performance.
@@ -178,7 +185,7 @@ The analysis focused on:
 | 2 | **Fertilizer — not Banks — is PSX's most predictable sector** | Lowest swing consistency of all six sectors (**0.90%**), despite being expected as the "defensive control" |
 | 3 | **Fertilizer and Banks lead on the combined Reliability Score** | Fertilizer **0.084**, Banks **0.082** — the top two of six; Autos (**0.022**) ranks lowest on every measure |
 
-### Reliability Score — full ranking
+### Reliability Score full ranking
 
 | Rank | Sector | Return per unit of risk (MP1) | Swing consistency (MP2) | Reliability Score |
 
@@ -192,8 +199,8 @@ The analysis focused on:
 
 ## SQL Techniques Used
 
-- Window functions — `LAG`, `RANK`
-- Aggregation — `AVG`, `STDDEV`, `COUNT`
+- Window functions: `LAG`, `RANK`
+- Aggregation: `AVG`, `STDDEV`, `COUNT`
 - CTEs (`WITH`) for multi-step, readable logic
 - `LATERAL` joins + `BETWEEN` date-range joins
 - `CASE WHEN` for before/after labeling and sector classification
