@@ -56,7 +56,7 @@ This project addresses the following questions:
 
 
 ## Datbase Schema
-** Table: sector_prices**
+### Table: sector_prices
 
 
 
@@ -89,7 +89,7 @@ CREATE INDEX idx_sector_prices_ticker ON sector_prices (ticker);
 CREATE INDEX idx_sector_prices_sector ON sector_prices (sector);
 
 
-** Table: policy_events**
+###Table: policy_events**
 
 
 
@@ -208,18 +208,18 @@ The analysis focused on:
 
 ## Recommendations
 
-1. **Prioritize Banks and Fertilizer** in a reliability-tilted PSX sector allocation — the top two on combined risk-adjusted return and policy-event predictability.
-2. **Treat Banks' positioning around SBP MPC meetings as a tactical signal** — average return swings ~71 bps before vs. after a rate cut.
-3. **Reduce or avoid Autos exposure** — the weakest risk-adjusted return with no offsetting predictability benefit.
+1. **Prioritize Banks and Fertilizer** in a reliability-tilted PSX sector allocation the top two on combined risk-adjusted return and policy-event predictability.
+2. **Treat Banks' positioning around SBP MPC meetings as a tactical signal**  average return swings ~71 bps before vs. after a rate cut.
+3. **Reduce or avoid Autos exposure** the weakest risk-adjusted return with no offsetting predictability benefit.
 4. **Investigate Textile and Cement's counter-intuitive post-event moves** before using them in a policy-driven strategy.
-5. **Treat Oil & Gas Exploration as an oil-price play, not an SBP play** — pair with global crude data before drawing conclusions.
+5. **Treat Oil & Gas Exploration as an oil-price play, not an SBP play**  pair with global crude data before drawing conclusions.
 
-> Recommendations are framed as things to test or investigate further, not proven solutions — findings in this project are associative, not causal.
+> Recommendations are framed as things to test or investigate further, not proven solutions/findings in this project are associative, not causal.
 
 ## Limitations & Next Steps
 
 **Limitations**
-- Findings are associative, not causal — they reflect historical correlation with SBP events, not a proven cause.
+- Findings are associative, not causal, they reflect historical correlation with SBP events, not a proven cause.
 - The ±10-day symmetric event window may blend pre-event anticipation with post-event reaction.
 - Uneven sample sizes across sectors (2,700–4,500 trading days) affect cross-sector confidence.
 - Based on Jan 2023 – present only; may not generalize to other rate cycles.
