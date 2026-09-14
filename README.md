@@ -61,6 +61,7 @@ This project addresses the following questions:
 
 
 CREATE TABLE sector_prices (
+
     id          SERIAL PRIMARY KEY,
     
     date        DATE NOT NULL,
