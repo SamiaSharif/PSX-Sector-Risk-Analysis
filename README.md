@@ -1,8 +1,8 @@
 # Risk-Aware Sector Investing on PSX
 
-**Which Pakistan Stock Exchange sectors deliver reliable risk-adjusted returns — and how do they react to SBP policy rate decisions?**
+**Which Pakistan Stock Exchange sectors deliver reliable risk-adjusted returns and how do they react to SBP policy rate decisions?**
 
-Capstone Project — AuratTech Data Analyst Track
+Capstone Project: AuratTech Data Analyst Track
 **Team:** Samia Sharif & Zainab Fatima
 
 
