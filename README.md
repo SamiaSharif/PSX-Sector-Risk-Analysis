@@ -38,7 +38,8 @@ This project addresses the following questions:
 ## Sectors & tickers
 
 | Sector | Tickers | Rate sensitivity |
-|---|---|---|
+
+
 | Banks | MEBL, UBL, HBL, MCB, BAHL | Direct — via net interest margins |
 | Textile | NML, GATM, ILP, KTML | Idiosyncratic — export/FX-driven |
 | Cement | LUCK, DGKC, MLCF, FCCL, CHCC | Mixed — construction financing + local demand |
@@ -57,7 +58,8 @@ This project addresses the following questions:
 ## Datbase Schema
 -- Table: sector_prices
 -- One row per ticker per trading day
--- ============================================
+
+
 CREATE TABLE sector_prices (
     id          SERIAL PRIMARY KEY,
     date        DATE NOT NULL,
@@ -79,7 +81,8 @@ CREATE INDEX idx_sector_prices_sector ON sector_prices (sector);
 
 
 -- Table: policy_events
--- ============================================
+
+
 
 CREATE TABLE IF NOT EXISTS public.policy_events (
     event_date       DATE,
@@ -160,7 +163,8 @@ The analysis focused on:
 ## Key Findings
 
 | # | Finding | Evidence |
-|---|---|---|
+
+
 | 1 | **Banks react sharply and directly to SBP rate cuts** | Average daily return flips from **-0.30% before** to **+0.41% after** a cut — a ~71 bps swing, the largest of any sector |
 | 2 | **Fertilizer — not Banks — is PSX's most predictable sector** | Lowest swing consistency of all six sectors (**0.90%**), despite being expected as the "defensive control" |
 | 3 | **Fertilizer and Banks lead on the combined Reliability Score** | Fertilizer **0.084**, Banks **0.082** — the top two of six; Autos (**0.022**) ranks lowest on every measure |
@@ -168,7 +172,8 @@ The analysis focused on:
 ### Reliability Score — full ranking
 
 | Rank | Sector | Return per unit of risk (MP1) | Swing consistency (MP2) | Reliability Score |
-|---|---|---|---|---|
+
+
 | 1 | Fertilizer | 0.0848 | 0.00895 | **0.084** |
 | 2 | Banks | 0.0831 | 0.01271 | **0.082** |
 | 3 | Cement | 0.0623 | 0.01702 | **0.061** |
@@ -211,7 +216,7 @@ The analysis focused on:
 
 
 
-Author
+Author: Samia Sharif
 
 Samia Sharif
 Data Analyst | SQL • Python • Power BI
