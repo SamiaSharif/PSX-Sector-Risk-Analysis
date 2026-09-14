@@ -48,11 +48,11 @@ This project addresses the following questions:
 | Autos | INDU, PSMC, HCAR, MTL | Mixed, lagged — auto financing + FX |
 
 ## Tools Used
-- PostgreSQL — Database creation, data storage, cleaning, transformation, joins, and analysis
-- SQL — Data querying, aggregation, filtering, calculations, and exploratory analysis
-- pgAdmin 4 — PostgreSQL database management and query execution
-- Excel/CSV — Data preparation and source-data handling
-- GitHub — Project documentation and portfolio presentation
+- PostgreSQL for Database creation, data storage, cleaning, transformation, joins, and analysis
+- SQL for  Data querying, aggregation, filtering, calculations, and exploratory analysis
+- pgAdmin 4 for PostgreSQL database management and query execution
+- Excel/CSV for Data preparation and source-data handling
+- GitHub for Project documentation and portfolio presentation
 
 
 ## Datbase Schema
@@ -62,14 +62,23 @@ This project addresses the following questions:
 
 CREATE TABLE sector_prices (
     id          SERIAL PRIMARY KEY,
+    
     date        DATE NOT NULL,
+    
     ticker      VARCHAR(10) NOT NULL,
+    
     sector      VARCHAR(50) NOT NULL,
+    
     open        NUMERIC(10,2),
+    
     high        NUMERIC(10,2),
+    
     low         NUMERIC(10,2),
+    
     close       NUMERIC(10,2),
+    
     volume      BIGINT,
+    
     is_anomaly  BOOLEAN DEFAULT FALSE,
 
     CONSTRAINT uq_ticker_date UNIQUE (ticker, date)
